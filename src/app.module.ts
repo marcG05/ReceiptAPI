@@ -12,6 +12,7 @@ import { ReceiptsModule } from './receipts/receipts.module';
 import { ProjectsModule } from './projects/projects.module';
 import {ConfigModule} from '@nestjs/config'
 import { KeycloakModule } from '@slickteam/nestjs-keycloak';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { KeycloakModule } from '@slickteam/nestjs-keycloak';
       entities: [Project, Category, User, Receipt, ReceiptLine, ProjectUser],
     }),
     KeycloakModule,
-    ReceiptsModule, ProjectsModule
+    ReceiptsModule, ProjectsModule, UsersModule
   ],
   controllers: [AppController],
   providers: [AppService],
