@@ -43,6 +43,22 @@ export class ProjectsService {
         
     }
 
+    async fetch(usr:IKeycloakUser, id:string) : Promise<IProject> {
+        let row = await this.proj.findOneBy({project_id: id});
+        if(!row){
+            const err : IError = {
+                message: "No project found",
+                service: "project.fetch",
+                status_code: 404,
+                params: ["ID"]
+            };
+
+            throw new HttpException(err, HttpStatus.NOT_FOUND);
+        }
+
+        return row;
+    }
+
     async newProject(usr:IKeycloakUser, in_proj:IProject): Promise<IAction> {
         if(!in_proj.description || !in_proj.project_name){
             const err : IError = {
@@ -55,6 +71,8 @@ export class ProjectsService {
             throw new HttpException(err, HttpStatus.BAD_REQUEST);
         }
 
+        let uid = randomUUID();
+
         let parentProjectEntity: Project | null = null;
 
         if (in_proj.project_id) {
@@ -62,7 +80,7 @@ export class ProjectsService {
         }
 
         const pro: Project = {
-            project_id: randomUUID(),
+            project_id: uid,
             description: in_proj.description,
             project_name: in_proj.project_name,
             status: 1,
@@ -77,7 +95,7 @@ export class ProjectsService {
             message: "Project successfully created",
             confirmed: true,
             arguments: [{
-                project_id : 123
+                project_id : uid
             }],
             status_code: 200
         };

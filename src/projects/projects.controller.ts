@@ -20,16 +20,8 @@ export class ProjectsController {
   }
 
   @Get(":id")
-  async fetch(@Param() param: any): Promise<any> {
-    let t = this.proService.getTemplate();
-    (await t).project_id = param.id;
-    return t;
-  }
-
-
-  @Post(":id")
-  async edit(@Param() param:any): Promise<any>{
-    return this.proService.getTemplate();
+  async fetch(@KeycloakUser() usr:IKeycloakUser, @Param() param: any): Promise<any> {
+    return this.proService.fetch(usr, param.id);
   }
 
   @Put()
