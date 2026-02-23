@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ICategory } from './receipts.interface';
 import { Category } from 'src/entities/category.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { IAction, IError } from 'src/common.interface';
 import { randomUUID } from 'crypto';
 
@@ -59,5 +59,15 @@ export class CategoriesService {
 
         return act;
 
+    }
+
+    async find(query:string): Promise<Category[]>{
+        let rows = this.cat.find({
+            where: [
+                {name : Like(`%${query}%`)}
+            ]
+        });
+
+        return rows;
     }
 }

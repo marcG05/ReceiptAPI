@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Put } from '@nestjs/common';
+import { Body, Controller, Get, Put, Query } from '@nestjs/common';
 import { ReceiptsService } from './receipts.service';
 import { CategoriesService } from './categories.service';
 import { type ICategory } from './receipts.interface';
@@ -22,6 +22,11 @@ export class ReceiptsController {
   @Put("categories/")
   async addCategories(@Body() body: ICategory): Promise<any> {
     return this.cService.add(body);
+  }
+
+  @Get("categories/search")
+  async searchCat(@Query("s") query:string){
+    return this.cService.find(query);
   }
 
 }
