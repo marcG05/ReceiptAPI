@@ -2,6 +2,7 @@ import { Body, Controller, Get, Put, Query } from '@nestjs/common';
 import { ReceiptsService } from './receipts.service';
 import { CategoriesService } from './categories.service';
 import { type ICategory } from './receipts.interface';
+import { type IKeycloakUser, KeycloakUser } from '@slickteam/nestjs-keycloak';
 
 @Controller("receipts")
 export class ReceiptsController {
@@ -27,6 +28,16 @@ export class ReceiptsController {
   @Get("categories/search")
   async searchCat(@Query("s") query:string){
     return this.cService.find(query);
+  }
+
+  @Get()
+  async fetchAll(@KeycloakUser() usr: IKeycloakUser){
+    return this.rService.fetchAll(usr);
+  }
+
+  @Get("search/")
+  async findByProject(@KeycloakUser() usr: IKeycloakUser, @Query('s')s: string){
+    return this.rService.fetchByProject(usr, s);
   }
 
 }
