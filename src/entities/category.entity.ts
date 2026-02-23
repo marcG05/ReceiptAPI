@@ -16,5 +16,5 @@ export class Category {
   description: string;
 
   @OneToMany(() => Receipt, receipt => receipt.category)
-  receipts: Receipt[];
+  receipts?: Receipt[];
 }

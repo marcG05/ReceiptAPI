@@ -1,6 +1,7 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Put } from '@nestjs/common';
 import { ReceiptsService } from './receipts.service';
 import { CategoriesService } from './categories.service';
+import { type ICategory } from './receipts.interface';
 
 @Controller("receipts")
 export class ReceiptsController {
@@ -17,4 +18,10 @@ export class ReceiptsController {
   async getCategories(): Promise<any> {
     return this.cService.fetchAll();
   }
+
+  @Put("categories/")
+  async addCategories(@Body() body: ICategory): Promise<any> {
+    return this.cService.add(body);
+  }
+
 }
