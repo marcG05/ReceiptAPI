@@ -17,7 +17,7 @@ export class Project {
   start_date: Date;
 
   @Column({ type: 'date', nullable: true })
-  end_date: Date;
+  end_date?: Date;
 
   @Column({ nullable: true })
   status: number;
@@ -25,14 +25,14 @@ export class Project {
   // Self-referencing foreign key (parent project)
   @ManyToOne(() => Project, project => project.subProjects, { nullable: true })
   @JoinColumn({ name: 'project_id_1' })
-  parentProject: Project;
+  parentProject: Project | null;
 
   @OneToMany(() => Project, project => project.parentProject)
-  subProjects: Project[];
+  subProjects?: Project[];
 
   @OneToMany(() => Receipt, receipt => receipt.project)
-  receipts: Receipt[];
+  receipts?: Receipt[];
 
   @OneToMany(() => ProjectUser, pu => pu.project)
-  projectUsers: ProjectUser[];
+  projectUsers?: ProjectUser[];
 }

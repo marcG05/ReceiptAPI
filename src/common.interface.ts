@@ -9,5 +9,5 @@ export interface IAction{
     status_code: number;
     message: string;
     confirmed: boolean;
-    arguments?: string[];
+    arguments?: any[];
 }

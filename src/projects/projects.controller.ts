@@ -1,6 +1,8 @@
 
-import { Controller, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
+import { type IKeycloakUser, KeycloakUser } from '@slickteam/nestjs-keycloak';
+import { type IProject } from './projects.interface';
 
 @Controller("projects")
 export class ProjectsController {
@@ -8,13 +10,13 @@ export class ProjectsController {
 
 
   @Get("template/")
-  async getTemplate(): Promise<any> {
+  getTemplate(): IProject {
     return this.proService.getTemplate();
   }
 
   @Get()
-  async fetchAll(): Promise<any> {
-    return this.proService.getTemplate();
+  async fetchAll(@KeycloakUser() usr: IKeycloakUser): Promise<any> {
+    return this.proService.fetchAll(usr);
   }
 
   @Get(":id")
@@ -31,8 +33,8 @@ export class ProjectsController {
   }
 
   @Put()
-  async add(): Promise<any> {
-    return this.proService.getTemplate();
+  async add(@KeycloakUser() usr: IKeycloakUser, @Body() body: IProject): Promise<any> {
+    return this.proService.newProject(usr, body);
   }
 
 }
