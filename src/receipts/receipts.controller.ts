@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Post, Put, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { ReceiptsService } from './receipts.service';
 import { CategoriesService } from './categories.service';
 import type { IReceipt, ICategory } from './receipts.interface';
 import { type IKeycloakUser, KeycloakUser } from '@slickteam/nestjs-keycloak';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { unlink } from 'fs/promises';
+import type { Response } from 'express';
 
 @Controller("receipts")
 export class ReceiptsController {
@@ -54,6 +55,16 @@ export class ReceiptsController {
   @Get()
   async fetchAll(@KeycloakUser() usr: IKeycloakUser){
     return this.rService.fetchAll(usr);
+  }
+
+  @Get(":id")
+  async fetchReceipt(@KeycloakUser() usr: IKeycloakUser, @Param() param: any){
+    return this.rService.fetchByID(usr, param.id);
+  }
+
+  @Get("image/:id")
+  async getImage(@KeycloakUser() usr: IKeycloakUser, @Param() param: any, @Res() response: Response){
+    return this.rService.getImage(usr, param.id, response);
   }
 
   @Get("search/")

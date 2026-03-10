@@ -11,6 +11,7 @@ import { User } from 'src/entities/user.entity';
 import { extname, join } from 'path';
 import { readdir, readFile, rename } from 'fs/promises';
 import { UsersService } from 'src/users/users.service';
+import { Response } from 'express';
 
 @Injectable()
 export class ReceiptsService {
@@ -93,6 +94,27 @@ export class ReceiptsService {
       file_proposition: JSON.parse(data.message.content)
     };
 
+
+  }
+
+
+  async getImage(usr: IKeycloakUser, id: any, response: Response) {
+    const files = await readdir("./uploads", {withFileTypes : true});
+
+    const file = files.find((f) => f.isFile() && f.name.split('.')[0] === id);
+
+    if(!file){
+      const err: IError = {
+        message: "File not found. upload the file first",
+        service: "receipt.getImage",
+        status_code: 404,
+        params: ["id"]
+      }
+
+      throw new HttpException(err, HttpStatus.NOT_FOUND);
+    }
+
+    response.sendFile(join(process.cwd(), "uploads", file.name));
 
   }
 
@@ -185,6 +207,28 @@ export class ReceiptsService {
     }
 
     return rows;
+  }
+
+  async fetchByID(usr: IKeycloakUser, param: any) : Promise<Receipt> {
+    let row = await this.receipt.findOne({
+      where: {
+        user : {user_id: usr.sub},
+        receipt_id: param
+      },
+      relations: {category: true, lines: true, project: true}
+    });
+
+    if(row == null){
+      const err : IError = {
+        message: "No Receipt found",
+        status_code: 404,
+        service: "receipt.fetch"
+      }
+
+      throw new HttpException(err, HttpStatus.NOT_FOUND);
+    }
+
+    return row;
   }
 
   async fetchByProject(usr:IKeycloakUser, project_id:string) : Promise<Receipt[]> {
