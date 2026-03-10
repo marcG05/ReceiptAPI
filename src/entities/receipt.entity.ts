@@ -30,6 +30,6 @@ export class Receipt {
   @JoinColumn({ name: 'project_id' })
   project: Project;
 
-  @OneToMany(() => ReceiptLine, line => line.receipt)
-  lines: ReceiptLine[];
+  @OneToMany(() => ReceiptLine, line => line.receipt, { cascade: true })
+  lines?: ReceiptLine[];
 }

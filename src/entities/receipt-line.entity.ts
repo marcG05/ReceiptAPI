@@ -17,5 +17,5 @@ export class ReceiptLine {
 
   @ManyToOne(() => Receipt, receipt => receipt.lines)
   @JoinColumn({ name: 'receipt_id' })
-  receipt: Receipt;
+  receipt?: Receipt;
 }

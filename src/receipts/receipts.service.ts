@@ -5,19 +5,29 @@ import { Receipt } from 'src/entities/receipt.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { IError } from 'src/common.interface';
+import {randomUUID } from 'crypto';
+import { ReceiptLine } from 'src/entities/receipt-line.entity';
+import { User } from 'src/entities/user.entity';
+import { extname, join } from 'path';
+import { readdir, readFile, rename } from 'fs/promises';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class ReceiptsService {
 
   constructor (
     @InjectRepository(Receipt)
-    private readonly receipt : Repository<Receipt>
-
+    private readonly receipt : Repository<Receipt>,
+    private readonly users : UsersService
   ){}
 
   async getTemplate(): Promise<IReceipt>{
     return {
         receipt_id: "R1234",
+        project_id: "1234",
+        description: "test",
+        lines: [],
+        user_id: "12345",
         category: {
             category_id : "C1234",
             description: "TEST",
@@ -26,7 +36,6 @@ export class ReceiptsService {
         },
         total: "999.99",
         entry_date: new Date(),
-        lines: [],
         user: {
             user_id: "U1234",
             username: "name",
@@ -35,9 +44,135 @@ export class ReceiptsService {
     }
   }
 
+  async insertImage(image: Express.Multer.File, usr:IKeycloakUser) : Promise<any> {
+    if (!image) {
+          const err: IError = {
+            message: "Missing image",
+            service: "receipt.insert",
+            status_code: 400,
+            params: ["image"]
+          };
+          throw new HttpException(err, HttpStatus.BAD_REQUEST);
+    }
+
+    const uid = randomUUID();
+    const ext = extname(image.originalname);
+    const finalPath = join('uploads', `${uid}${ext}`);
+    await rename(image.path, finalPath);
+    image.path = finalPath;
+
+    const fileBuffer = await readFile(finalPath);
+    const b64Str = fileBuffer.toString("base64");
+    
+    const bod = {
+    model: "receipt-scan",
+    stream: false,
+    messages: [
+      {
+        role: "user",
+        content: "",
+        images: [b64Str]
+      }
+    ]
+  };
+
+  const propositionResp = await fetch("http://192.168.2.136:11434/api/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(bod)
+  });
+
+  const data = await propositionResp.json();
+
+    
+
+    return {
+      file_id: uid,
+      file_proposition: JSON.parse(data.message.content)
+    };
+
+
+  }
+
+  async insertReceipt( body: IReceipt, usr: IKeycloakUser) : Promise<Receipt>{
+      if(!body.total || !body.category || !body.description || !body.project_id || !body.file_id){
+        const err: IError = {
+          message: "Missing total, category, description or file_id",
+          service: "receipt.insert",
+          status_code: 400,
+          params: ["total", "category", "description", "file_id"]
+        };
+
+        throw new HttpException(err, HttpStatus.BAD_REQUEST);
+      }
+
+      const files = await readdir("./uploads", {withFileTypes : true});
+
+      const file = files.find((f) => f.isFile() && f.name.split('.')[0] === body.file_id);
+
+      if(!file){
+        const err: IError = {
+          message: "File not found. upload the file first",
+          service: "receipt.insert",
+          status_code: 400,
+          params: ["file_id"]
+        }
+
+        throw new HttpException(err, HttpStatus.BAD_REQUEST);
+      }
+
+      const user = await this.users.updateProfile(usr);
+
+
+      const rc : Receipt = {
+        receipt_id : randomUUID(),
+        description: body.description.length > 49 ? body.description.substring(0, 49) : body.description,
+        entry_date: new Date(),
+        total: body.total,
+        user: user,
+
+        category: {
+          categorie_id: body.category.category_id,
+        },
+
+        project: {
+          project_id: body.project_id
+        },
+      };
+
+      rc.lines = [];
+      body.lines.forEach((i) =>{
+        const line : ReceiptLine = {
+          line_id: randomUUID(),
+          input: i.name,
+          qte: i.qty,
+          subtotal: i.price,
+        }
+        rc.lines?.push(line);
+      });
+
+
+      const rcp = await this.receipt.save(rc).then((r) => {
+        const finalPath = join('uploads', `${r.receipt_id}.${file.name.split('.')[1]}`);
+        rename(join('uploads', file.name), finalPath);
+        return r;
+      });
+
+      return rcp;
+
+
+  }
+
 
   async fetchAll(usr: IKeycloakUser): Promise<Receipt[]>{
-    let rows = await this.receipt.find();
+    let rows = await this.receipt.find({
+    where: {
+      user: { user_id: usr.sub }
+    },
+    relations: { category: true, lines: true, project: true }
+  });
 
     if(rows.length < 1){
       const err : IError = {
@@ -60,7 +195,7 @@ export class ReceiptsService {
     .leftJoinAndSelect('receipt.lines', 'lines')
     .leftJoin('receipt.user', 'user')
     .where('project.project_id = :project_id', { project_id })
-    //.andWhere('user.user_id = :user_id', { user_id: usr.sub })
+  .andWhere('user.user_id = :user_id', { user_id: usr.sub })
     .orderBy('receipt.entry_date', 'DESC')
     .getMany();
 

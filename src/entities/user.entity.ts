@@ -14,8 +14,8 @@ export class User {
   type: number;
 
   @OneToMany(() => Receipt, receipt => receipt.user)
-  receipts: Receipt[];
+  receipts?: Receipt[];
 
   @OneToMany(() => ProjectUser, pu => pu.user)
-  projectUsers: ProjectUser[];
+  projectUsers?: ProjectUser[];
 }

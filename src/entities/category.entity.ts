@@ -7,13 +7,13 @@ export class Category {
   categorie_id: string;
 
   @Column({ length: 50, nullable: true })
-  name: string;
+  name?: string;
 
   @Column({ length: 50, nullable: true })
-  type: string;
+  type?: string;
 
   @Column({ length: 255, nullable: true })
-  description: string;
+  description?: string;
 
   @OneToMany(() => Receipt, receipt => receipt.category)
   receipts?: Receipt[];

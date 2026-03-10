@@ -8,24 +8,24 @@ export class Project {
   project_id: string;
 
   @Column({ length: 50 })
-  project_name: string;
+  project_name?: string;
 
   @Column({ length: 50, nullable: true })
-  description: string;
+  description?: string;
 
   @Column({ type: 'date' })
-  start_date: Date;
+  start_date?: Date;
 
   @Column({ type: 'date', nullable: true })
   end_date?: Date;
 
   @Column({ nullable: true })
-  status: number;
+  status?: number;
 
   // Self-referencing foreign key (parent project)
   @ManyToOne(() => Project, project => project.subProjects, { nullable: true })
   @JoinColumn({ name: 'project_id_1' })
-  parentProject: Project | null;
+  parentProject?: Project | null;
 
   @OneToMany(() => Project, project => project.parentProject)
   subProjects?: Project[];

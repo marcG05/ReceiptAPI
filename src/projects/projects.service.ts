@@ -6,6 +6,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Project } from 'src/entities/project.entity';
 import { Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
+import { UsersService } from 'src/users/users.service';
+import { ProjectUser } from 'src/entities/project-user.entity';
 
 
 @Injectable()
@@ -13,7 +15,10 @@ export class ProjectsService {
 
     constructor (
         @InjectRepository(Project)
-        private proj: Repository<Project>
+        private proj: Repository<Project>,
+        @InjectRepository(ProjectUser)
+        private projUsr: Repository<ProjectUser>,
+        private readonly user:UsersService
     ){};
 
     getTemplate(): IProject {
@@ -26,8 +31,11 @@ export class ProjectsService {
         }
     }
 
-    async fetchAll(usr: IKeycloakUser): Promise<IProject[]> {
-        let rows = await this.proj.find();
+    async fetchAll(usr: IKeycloakUser): Promise<Project[]> {
+        let rows = await this.projUsr.find({
+            where: {user_id : usr.sub},
+            relations: {project: true}
+        });
 
             if(rows.length < 1){
                 const err: IError = {
@@ -39,12 +47,14 @@ export class ProjectsService {
             throw new HttpException(err, HttpStatus.NOT_FOUND);
         }
 
-        return rows;
+        return rows.map((e)=>{
+            return e.project;
+        });
         
     }
 
-    async fetch(usr:IKeycloakUser, id:string) : Promise<IProject> {
-        let row = await this.proj.findOneBy({project_id: id});
+    async fetch(usr:IKeycloakUser, id:string) : Promise<Project> {
+        let row = await this.projUsr.findOne({where: {project_id: id, user_id: usr.sub}, relations: {project: true}});
         if(!row){
             const err : IError = {
                 message: "No project found",
@@ -56,7 +66,7 @@ export class ProjectsService {
             throw new HttpException(err, HttpStatus.NOT_FOUND);
         }
 
-        return row;
+        return row.project;
     }
 
     async newProject(usr:IKeycloakUser, in_proj:IProject): Promise<IAction> {
@@ -79,6 +89,7 @@ export class ProjectsService {
             parentProjectEntity = await this.proj.findOne({ where: { project_id: in_proj.project_id } });
         }
 
+
         const pro: Project = {
             project_id: uid,
             description: in_proj.description,
@@ -88,7 +99,18 @@ export class ProjectsService {
             parentProject: parentProjectEntity || null  // must be null if no parent
         };
 
-        await this.proj.insert(pro);
+        const user = await this.user.updateProfile(usr);
+        const project = await this.proj.save(pro);
+        await this.projUsr.save({
+            access: 2,
+            project: project,
+            user: user,
+            user_id: user.user_id,
+            project_id: project.project_id
+        });
+
+
+        //await this.proj.insert(pro);
 
 
         const act: IAction = {
