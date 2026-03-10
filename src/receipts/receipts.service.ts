@@ -193,7 +193,8 @@ export class ReceiptsService {
     where: {
       user: { user_id: usr.sub }
     },
-    relations: { category: true, lines: true, project: true }
+    relations: { category: true, lines: true, project: true },
+    order : { entry_date: 'DESC'}
   });
 
     if(rows.length < 1){
@@ -232,16 +233,11 @@ export class ReceiptsService {
   }
 
   async fetchByProject(usr:IKeycloakUser, project_id:string) : Promise<Receipt[]> {
-    let rows = await this.receipt
-    .createQueryBuilder('receipt')
-    .leftJoinAndSelect('receipt.project', 'project')
-    .leftJoinAndSelect('receipt.category', 'category')
-    .leftJoinAndSelect('receipt.lines', 'lines')
-    .leftJoin('receipt.user', 'user')
-    .where('project.project_id = :project_id', { project_id })
-  .andWhere('user.user_id = :user_id', { user_id: usr.sub })
-    .orderBy('receipt.entry_date', 'DESC')
-    .getMany();
+    let rows = await this.receipt.find({
+      where : {project : {project_id : project_id}},
+      relations: {category: true, lines: true, project: true},
+      order: { entry_date: 'DESC'}
+    })
 
     if(rows.length < 1){
       const err : IError = {

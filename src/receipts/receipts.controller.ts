@@ -57,9 +57,10 @@ export class ReceiptsController {
     return this.rService.fetchAll(usr);
   }
 
-  @Get(":id")
-  async fetchReceipt(@KeycloakUser() usr: IKeycloakUser, @Param() param: any){
-    return this.rService.fetchByID(usr, param.id);
+  @Get("search/")
+  async findByProject(@KeycloakUser() usr: IKeycloakUser, @Query('s')s: string){
+    console.log('project_id received:', s);  // is it undefined?
+    return this.rService.fetchByProject(usr, s);
   }
 
   @Get("image/:id")
@@ -67,9 +68,9 @@ export class ReceiptsController {
     return this.rService.getImage(usr, param.id, response);
   }
 
-  @Get("search/")
-  async findByProject(@KeycloakUser() usr: IKeycloakUser, @Query('s')s: string){
-    return this.rService.fetchByProject(usr, s);
+  @Get(":id")
+  async fetchReceipt(@KeycloakUser() usr: IKeycloakUser, @Param() param: any){
+    return this.rService.fetchByID(usr, param.id);
   }
 
 }
