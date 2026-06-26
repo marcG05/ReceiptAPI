@@ -71,13 +71,13 @@ export class ReceiptsService {
     messages: [
       {
         role: "user",
-        content: "",
+        content: 'Returns the text in french',
         images: [b64Str]
       }
     ]
   };
 
-  const propositionResp = await fetch("http://192.168.2.136:11434/api/chat", {
+  const propositionResp = await fetch("http://192.168.2.138:11434/api/chat", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
